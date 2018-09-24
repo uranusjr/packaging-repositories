@@ -10,7 +10,7 @@ from packaging.requirements import Requirement
 from packaging_repositories import Fetcher, SimpleRepository
 
 
-def iter_entries(fetcher):
+def iter_all_entries(fetcher):
     session = requests.session()
     for endpoint in fetcher.repository.iter_endpoints(fetcher.requirement):
         if endpoint.local:
@@ -33,7 +33,7 @@ class RequestsFetcher(Fetcher):
     """
     def __init__(self, *args, **kwargs):
         super(RequestsFetcher, self).__init__(*args, **kwargs)
-        self._iterator = iter_entries(self)
+        self._iterator = iter_all_entries(self)
 
     def __next__(self):
         return next(self._iterator)
