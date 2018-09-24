@@ -7,10 +7,7 @@ Proposed API:
 
 ```python
 from packaging.requirement import Requirement
-from packaging_repositories import (
-    Fetcher, FlatHTMLRepository,
-    LocalDirectoryRepository, SimpleRepository,
-)
+from packaging_repositories import Fetcher, FlatRepository, SimpleRepository
 
 
 class RequestsFetcher(Fetcher):
@@ -23,14 +20,14 @@ class AIOHTTPFetcher(Fetcher):
     """
 
 
-# FlatHTMLRepository and LocalDirectoryRepository should be able to parse
-# URLs. LocalDirectoryRepository would raise ValueError if the URL is not
-# ``file:``. This does not check if the endpoint is actually available
-# (done lazily when the repos is actually accessed).
+# Both kinds of repositories should be able to parse URLs and local paths.
+# This does not check if the endpoint is actually available (done lazily when
+# the repos is actually accessed).
 repos = [
     SimpleRepository('https://pypi.org/simple'),
-    FlatHTMLRepository('/path/to/find-links.html'),
-    LocalDirectoryRepository('/path/to/local/directory'),
+    FlatRepository('https://pypackages.mydomain.com/find-links.html'),
+    FlatRepository('/path/to/find-links.html'),
+    FlatRepository('/path/to/local/directory'),
 ]
 
 requirement = Requirement('pip>=10,<18')
