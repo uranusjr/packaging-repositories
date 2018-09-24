@@ -54,8 +54,9 @@ class SimpleRepository(_Repository):
         value = posixpath.join(base_endpoint.value, name, "")
         yield base_endpoint._replace(value=value)
 
-    def get_entries(self, html):
-        return parse_from_html(html)
+    def get_entries(self, endpoint, html):
+        name = endpoint.value.rstrip("/").rsplit("/", 1)[-1]
+        return parse_from_html(name, html)
 
 
 class FlatHTMLRepository(_Repository):
@@ -66,8 +67,8 @@ class FlatHTMLRepository(_Repository):
     def iter_endpoints(self, requirement):
         yield self.base_endpoint
 
-    def get_entries(self, html):
-        return parse_from_html(html)
+    def get_entries(self, endpoint, html):
+        return parse_from_html(None, html)
 
 
 class LocalDirectoryRepository(_Repository):
@@ -83,5 +84,5 @@ class LocalDirectoryRepository(_Repository):
     def iter_endpoints(self, requirement):
         yield self.base_endpoint
 
-    def get_entries(self, paths):
-        return list_from_paths(paths)
+    def get_entries(self, endpoint, paths):
+        return list_from_paths(endpoint, paths)

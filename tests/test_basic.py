@@ -24,7 +24,7 @@ def iter_entries(fetcher):
             response = session.get(endpoint.value)
             response.raise_for_status()
             src = response.text
-        for entry in fetcher.iter_entries(src):
+        for entry in fetcher.iter_entries(endpoint, src):
             if fetcher.match(entry):
                 yield entry
 

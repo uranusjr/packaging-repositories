@@ -39,7 +39,7 @@ class Fetcher(object):
     def __aiter__(self):
         return self
 
-    def iter_entries(self, source):
-        for entry in self.repository.get_entries(source):
+    def iter_entries(self, endpoint, source):
+        for entry in self.repository.get_entries(endpoint, source):
             if _is_match(entry, self.requirement, self.environment):
                 yield entry
