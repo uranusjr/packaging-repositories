@@ -7,6 +7,8 @@ import posixpath
 from packaging.utils import canonicalize_name
 from six.moves import urllib_parse, urllib_request
 
+from .entries import list_from_directory, parse_from_html
+
 
 def _is_filesystem_path(parsed_result):
     if not parsed_result.scheme:
@@ -32,7 +34,7 @@ class _Repository(object):
         return "{0}({1!r})".format(type(self).__name__, self.endpoint.value)
 
     @property
-    def endpoint(self):
+    def base_endpoint(self):
         endpoint = self._base_endpoint
         parsed_result = urllib_parse.urlparse(endpoint)
         if _is_filesystem_path(parsed_result):
@@ -46,16 +48,31 @@ class _Repository(object):
 class SimpleRepository(_Repository):
     """A repository compliant to PEP 503 "Simple Repository API".
     """
-    def get_endpoint(self, requirement):
+    def iter_endpoints(self, requirement):
         name = canonicalize_name(requirement.name)
-        value = posixpath.join(self.endpoint.value, name, "")
-        return self.endpoint._replace(value=value)
+        base_endpoint = self.base_endpoint
+        value = posixpath.join(base_endpoint.value, name, "")
+        yield base_endpoint._replace(value=value)
 
 
-class FlatRepository(_Repository):
-    """A "flat" repository, as implemented by pip's --find-links.
+class FlatHTMLRepository(_Repository):
+    """A repository represented by a single HTML file.
 
-    This could be
+    This is the non-directory variant of pip's --find-links.
     """
-    def get_endpoint(self, requirement):
-        return self.endpoint
+    def iter_endpoints(self, requirement):
+        yield self.base_endpoint
+
+
+class LocalDirectoryRepository(_Repository):
+    """A repository represented by a directory on the local filesystem.
+
+    This is the directory variant of pip's --find-links.
+    """
+    def __init__(self, endpoint):
+        super(LocalDirectoryRepository, self).__init__(endpoint)
+        if not self.base_endpoint.local:
+            raise ValueError("endpoint is not local")
+
+    def iter_endpoints(self, requirement):
+        yield self.base_endpoint
