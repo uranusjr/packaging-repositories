@@ -25,8 +25,7 @@ def iter_entries(fetcher):
             response.raise_for_status()
             src = response.text
         for entry in fetcher.iter_entries(endpoint, src):
-            if fetcher.match(entry):
-                yield entry
+            yield entry
 
 
 class RequestsFetcher(Fetcher):
@@ -44,4 +43,4 @@ def test_basic():
     pypi = SimpleRepository("https://pypi.org/simple")
     fetcher = RequestsFetcher(pypi, Requirement("pip>=9,<10"))
     entries = list(fetcher)
-    assert len(entries) >= 8
+    assert len(entries) >= 8, entries

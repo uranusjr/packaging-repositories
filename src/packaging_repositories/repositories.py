@@ -55,8 +55,7 @@ class SimpleRepository(_Repository):
         yield base_endpoint._replace(value=value)
 
     def get_entries(self, endpoint, html):
-        name = endpoint.value.rstrip("/").rsplit("/", 1)[-1]
-        return parse_from_html(name, html)
+        return parse_from_html(endpoint.value, html)
 
 
 class FlatHTMLRepository(_Repository):
