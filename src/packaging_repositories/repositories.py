@@ -7,7 +7,7 @@ import posixpath
 from packaging.utils import canonicalize_name
 from six.moves import urllib_parse, urllib_request
 
-from .entries import list_from_directory, parse_from_html
+from .entries import list_from_paths, parse_from_html
 
 
 def _is_filesystem_path(parsed_result):
@@ -54,6 +54,9 @@ class SimpleRepository(_Repository):
         value = posixpath.join(base_endpoint.value, name, "")
         yield base_endpoint._replace(value=value)
 
+    def get_entries(self, html):
+        return parse_from_html(html)
+
 
 class FlatHTMLRepository(_Repository):
     """A repository represented by a single HTML file.
@@ -62,6 +65,9 @@ class FlatHTMLRepository(_Repository):
     """
     def iter_endpoints(self, requirement):
         yield self.base_endpoint
+
+    def get_entries(self, html):
+        return parse_from_html(html)
 
 
 class LocalDirectoryRepository(_Repository):
@@ -76,3 +82,6 @@ class LocalDirectoryRepository(_Repository):
 
     def iter_endpoints(self, requirement):
         yield self.base_endpoint
+
+    def get_entries(self, paths):
+        return list_from_paths(paths)

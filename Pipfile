@@ -1,16 +1,14 @@
 [packages]
-packaging_repositories = { path = '.', editable = true }
+packaging_repositories = { path = '.', extras = ['tests'], editable = true }
 
 [dev-packages]
 invoke = '*'
 parver = '*'
-towncrier = '*'
-wheel = '*'
 pytest = '*'
-pytest-xdist = '*'
-pytest-cov = '*'
 sphinx = '*'
 sphinx-rtd-theme = '*'
+towncrier = '*'
+wheel = '*'
 
 [scripts]
 release = 'inv release'
