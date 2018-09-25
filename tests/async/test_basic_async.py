@@ -70,7 +70,14 @@ async def fetch(repository, requirement):
     return [entry async for entry in fetcher]
 
 
+def run(coro):
+    """Lightweight backport of asyncio.run().
+    """
+    loop = asyncio.new_event_loop()
+    return loop.run_until_complete(coro)
+
+
 def test_basic():
     pypi = SimpleRepository("https://pypi.org/simple")
-    entries = asyncio.run(fetch(pypi, Requirement("pip>=9,<10")))
+    entries = run(fetch(pypi, Requirement("pip>=9,<10")))
     assert len(entries) >= 8, entries
