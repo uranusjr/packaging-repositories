@@ -12,5 +12,5 @@ ASYNC_DIR = py.path.local(os.path.abspath(__file__)).dirpath("async")
 
 def pytest_ignore_collect(path, config):
     # Ignore async tests if not supported.
-    if sys.version_info < (3, 5) and path.common(ASYNC_DIR) == ASYNC_DIR:
+    if sys.version_info < (3, 6) and path.common(ASYNC_DIR) == ASYNC_DIR:
         return True
