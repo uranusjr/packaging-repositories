@@ -11,7 +11,7 @@ from packaging_repositories import Fetcher, SimpleRepository
 
 
 def as_future(value):
-    future = asyncio.Future()
+    future = asyncio.get_event_loop().create_future()
     future.set_result(value)
     return future
 
@@ -74,6 +74,7 @@ def run(coro):
     """Lightweight backport of asyncio.run().
     """
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     return loop.run_until_complete(coro)
 
 
