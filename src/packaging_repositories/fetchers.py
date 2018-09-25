@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+
 from packaging.utils import canonicalize_name
 
 
@@ -38,6 +40,10 @@ class Fetcher(object):
 
     def __aiter__(self):
         return self
+
+    if sys.version_info < (3,):
+        def next(self):
+            return self.__next__()
 
     def iter_entries(self, endpoint, source):
         for entry in self.repository.get_entries(endpoint, source):
