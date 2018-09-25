@@ -23,7 +23,7 @@ async def read_remote_text(session, url):
 
 
 async def iter_futures(session, fetcher):
-    for endpoint in fetcher.repository.iter_endpoints(fetcher.requirement):
+    for endpoint in fetcher.iter_endpoints():
         if endpoint.local:
             path = endpoint.value
             if os.path.isdir(path):

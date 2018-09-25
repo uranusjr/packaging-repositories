@@ -12,7 +12,7 @@ from packaging_repositories import Fetcher, SimpleRepository
 
 def iter_all_entries(fetcher):
     session = requests.session()
-    for endpoint in fetcher.repository.iter_endpoints(fetcher.requirement):
+    for endpoint in fetcher.iter_endpoints():
         if endpoint.local:
             path = endpoint.value
             if os.path.isdir(path):
