@@ -22,10 +22,11 @@ class AIOHTTPFetcher(Fetcher):
     """
 
 
-# All kinds of repositories should be able to parse URLs and local paths.
 # This does not check if the endpoint is actually available (done lazily when
 # the repos is actually accessed), but LocalDirectoryRepository does check
-# whether the path/URL is actually local.
+# whether the path/URL is actually local. FlatHTMLRepository automatically
+# converts file: URLs to paths, so the fetcher implementation does not need
+# to worry about special-casing them.
 repos = [
     SimpleRepository('https://pypi.org/simple'),
     FlatHTMLRepository('https://pypackages.mydomain.com/find-links.html'),
@@ -36,19 +37,14 @@ repos = [
 requirement = Requirement('pip>=10,<18')
 
 for repo in repos:
-    # Not sure if it is best to inherit the link model.
-    # If the second argument is None, *all* links are returned. This would
-    # be useful for find-links repos, and possible for the simple API (by
-    # inspecting the root page), although not necessarily a good thing.
     fetcher = RequestsFetcher(repo, requirement)
-    for link in fetcher:
-        print(link)
+    for entry in fetcher:
+        print(entry)
 
-    # It is up to the fetcher class to decide how to yield links. Maybe it
-    # is a good idea to separate base classes for sync and async fetchers?
-    # SynchronousFetcher implements ``__iter__``, and AsynchronousFetcher
-    # implements ``__aiter__``.
+    # Maybe it is a good idea to separate base classes for fetchers? 
+    # SynchronousFetcher implements ``__next__``, and AsynchronousFetcher
+    # implements ``__anext__``.
     fetcher = AIOHTTPFetcher(repo, requirement)
-    async for link in fetcher:
-        print(link)
+    async for entry in fetcher:
+        print(entry)
 ```
