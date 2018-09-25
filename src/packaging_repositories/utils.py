@@ -4,6 +4,12 @@
 import posixpath
 import re
 
+from packaging.utils import canonicalize_name
+
+
+def package_names_match(a, b):
+    return canonicalize_name(a) == canonicalize_name(b)
+
 
 def split_entry_ext(path):
     """Like os.path.splitext, but take off .tar too.

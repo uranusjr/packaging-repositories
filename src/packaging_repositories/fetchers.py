@@ -3,11 +3,11 @@
 
 import sys
 
-from packaging.utils import canonicalize_name
+from .utils import package_names_match
 
 
 def _is_match(entry, requirement, environment):
-    if canonicalize_name(entry.name) != canonicalize_name(requirement.name):
+    if not package_names_match(entry.name, requirement.name):
         return False
     specifier = requirement.specifier
     if specifier and not specifier.contains(entry.version):

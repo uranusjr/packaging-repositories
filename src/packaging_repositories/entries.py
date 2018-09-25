@@ -5,13 +5,12 @@ import collections
 import os
 
 import packaging.specifiers
-import packaging.utils
 import packaging.version
 import six
 
 from .utils import (
     WHEEL_EXTENSION, WHEEL_FILENAME_RE,
-    match_egg_info_version, split_entry_ext,
+    match_egg_info_version, package_names_match, split_entry_ext,
 )
 
 
@@ -29,13 +28,6 @@ This would be an anchor tag in an HTML file, or a file in a directory.
 """
 
 
-def _package_names_match(a, b):
-    return (
-        packaging.utils.canonicalize_name(a) ==
-        packaging.utils.canonicalize_name(b)
-    )
-
-
 def _parse_name_version(filename, name):
     stem, ext = split_entry_ext(filename)
     if ext == WHEEL_EXTENSION:
@@ -43,7 +35,7 @@ def _parse_name_version(filename, name):
         if not match:
             raise ValueError("invald wheel name {0!r}".format(filename))
         wheel_name, vers = match.group("name", "ver")
-        if name is not None and not _package_names_match(name, wheel_name):
+        if name is not None and not package_names_match(name, wheel_name):
             raise ValueError("invald wheel {0!r} for package {1!r}".format(
                 filename, name,
             ))
