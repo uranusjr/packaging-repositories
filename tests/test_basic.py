@@ -53,10 +53,13 @@ def test_simple():
     assert len(entries) == 8, entries
 
 
+def get_data(name):
+    return os.path.join(os.path.dirname(__file__), "data", name)
+
+
 @pytest.fixture()
 def flat_repo():
-    path = os.path.join(__file__, "..", "data", "links.html")
-    repo = FlatHTMLRepository(path)
+    repo = FlatHTMLRepository(get_data("links.html"))
     return repo
 
 
@@ -69,13 +72,12 @@ def test_flat_nomatch(flat_repo):
 def test_flat_match(flat_repo):
     fetcher = RequestsFetcher(flat_repo, "jinja2")
     entries = list(fetcher)
-    root = os.path.join(os.path.dirname(__file__), "data")
     assert entries == [
         Entry(
             name="jinja2", version=Version("2.10"),
             endpoint=Endpoint(
                 local=True,
-                value=os.path.join(root, "Jinja2-2.10-py2.py3-none-any.whl"),
+                value=get_data("Jinja2-2.10-py2.py3-none-any.whl"),
             ),
             hashes={}, requires_python=SpecifierSet(), gpg_sig=""),
     ]
