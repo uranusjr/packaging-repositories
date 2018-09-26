@@ -4,9 +4,16 @@
 import io
 import os
 
+import pytest
+
 import requests
 
-from packaging_repositories import Fetcher, SimpleRepository, VersionFilter
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+from packaging_repositories import (
+    Endpoint, Entry, Fetcher,
+    FlatHTMLRepository, SimpleRepository, VersionFilter,
+)
 
 
 def iter_all_entries(fetcher):
@@ -38,9 +45,47 @@ class RequestsFetcher(Fetcher):
         return next(self._iterator)
 
 
-def test_basic():
+def test_simple():
     pypi = SimpleRepository("https://pypi.org/simple")
     fetcher = RequestsFetcher(pypi, "pip")
     version_filter = VersionFilter(">=9,<10")
     entries = list(version_filter(fetcher))
-    assert len(entries) >= 8, entries
+    assert len(entries) == 8, entries
+
+
+@pytest.fixture()
+def flat_repo():
+    path = os.path.join(__file__, "..", "data", "links.html")
+    repo = FlatHTMLRepository(path)
+    return repo
+
+
+def test_flat_nomatch(flat_repo):
+    fetcher = RequestsFetcher(flat_repo, "pip")
+    entries = list(fetcher)
+    assert len(entries) == 0, entries
+
+
+def test_flat_match(flat_repo):
+    fetcher = RequestsFetcher(flat_repo, "jinja2")
+    entries = list(fetcher)
+    root = os.path.join(os.path.dirname(__file__), "data")
+    assert entries == [
+        Entry(
+            name="Jinja2", version=Version("2.10"),
+            endpoint=Endpoint(
+                local=True,
+                value=os.path.join(root, "Jinja2-2.10-py2.py3-none-any.whl"),
+            ),
+            hashes={}, requires_python=SpecifierSet(), gpg_sig=""),
+    ]
+
+
+def test_flat_match_filter(flat_repo):
+    fetcher = RequestsFetcher(flat_repo, "jinja2")
+    assert len(list(VersionFilter("~=2.0")(fetcher))) == 1
+
+
+def test_flat_match_filter_nomatch(flat_repo):
+    fetcher = RequestsFetcher(flat_repo, "jinja2")
+    assert len(list(VersionFilter(">2.10")(fetcher))) == 0

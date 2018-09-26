@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import posixpath
 
 from packaging.utils import canonicalize_name
@@ -37,7 +38,7 @@ class _Repository(object):
         endpoint = self._base_endpoint
         parsed_result = urllib_parse.urlparse(endpoint)
         if _is_filesystem_path(parsed_result):
-            return Endpoint(True, endpoint)
+            return Endpoint(True, os.path.abspath(endpoint))
         return endpoint_from_url(parsed_result)
 
 

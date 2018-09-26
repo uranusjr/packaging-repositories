@@ -6,10 +6,13 @@ import posixpath
 import re
 
 from packaging.utils import canonicalize_name
+from six import string_types
 from six.moves import urllib_parse, urllib_request
 
 
 def package_names_match(a, b):
+    if not isinstance(a, string_types) or not isinstance(b, string_types):
+        return False
     return canonicalize_name(a) == canonicalize_name(b)
 
 

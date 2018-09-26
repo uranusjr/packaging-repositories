@@ -45,7 +45,9 @@ def _parse_name_version(filename, name):
         if not match:
             raise ValueError("invald wheel name {0!r}".format(filename))
         wheel_name, vers = match.group("name", "ver")
-        if name is not None and not package_names_match(name, wheel_name):
+        if name is None:
+            name = wheel_name
+        elif not package_names_match(name, wheel_name):
             raise ValueError("invald wheel {0!r} for package {1!r}".format(
                 filename, name,
             ))
@@ -54,8 +56,8 @@ def _parse_name_version(filename, name):
         if vers is None:
             raise ValueError("invalid filename {0!r}".format(filename))
         if name is None:
-            suffix_len = len(vers) + 1  # Strip version and the dash before it.
-            name = stem[:-suffix_len]
+            name = stem[:-len(vers)]
+            vers = vers[1:]     # Strip leading "-".
     return name, packaging.version.parse(vers)
 
 
@@ -70,7 +72,9 @@ def _iter_entries(document, base_url, package_name):
         if not href:
             continue
         try:
-            _, version = _parse_name_version(anchor.text, package_name)
+            package_name, version = _parse_name_version(
+                anchor.text, package_name,
+            )
         except ValueError:
             continue
         url = CLEAN_URL_RE.sub(
@@ -99,7 +103,7 @@ Entry = collections.namedtuple("Entry", [
     "endpoint",         # Endpoint to get the file.
     "hashes",           # Mapping of hashes, {hashname: hexdigest}.
     "requires_python",  # packaging.specifiers.SpecifierSet.
-    "gpg_sig",          # str or None.
+    "gpg_sig",          # str, maybe empty.
 ])
 """A downloadable thing in a repository.
 
