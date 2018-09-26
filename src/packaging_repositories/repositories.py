@@ -57,7 +57,9 @@ class SimpleRepository(_Repository):
         yield base_endpoint._replace(value=value)
 
     def get_entries(self, endpoint, html):
-        return parse_from_html(endpoint.value, html)
+        url = endpoint.value
+        package_name = url.rstrip("/").rsplit("/", 1)[-1]
+        return parse_from_html(html, url, package_name=package_name)
 
 
 class FlatHTMLRepository(_Repository):
@@ -69,7 +71,7 @@ class FlatHTMLRepository(_Repository):
         yield self.base_endpoint
 
     def get_entries(self, endpoint, html):
-        return parse_from_html(None, html)
+        return parse_from_html(html, endpoint.value)
 
 
 class LocalDirectoryRepository(_Repository):
@@ -86,4 +88,4 @@ class LocalDirectoryRepository(_Repository):
         yield self.base_endpoint
 
     def get_entries(self, endpoint, paths):
-        return list_from_paths(endpoint, paths)
+        return list_from_paths(paths, endpoint.value)

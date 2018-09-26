@@ -3,7 +3,10 @@
 
 import collections
 import os
+import sys
+import re
 
+import html5lib
 import packaging.specifiers
 import packaging.version
 import six
@@ -14,18 +17,24 @@ from .utils import (
 )
 
 
-Entry = collections.namedtuple("Entry", [
-    "name",             # Name of the project. Not necessarily canonical?
-    "version",          # packaging.version._BaseVersion.
-    "location",         # URL or path to get the file.
-    "hashes",           # Mapping of hashes, {hashname: hexdigest}.
-    "requires_python",  # packaging.specifiers.SpecifierSet.
-    "gpg_sig",          # str or None.
-])
-"""A downloadable thing in a repository.
+# Taken from distlib.compat (to match pip's implementation).
+if sys.version_info < (3, 4):
+    unescape = six.moves.html_parser.HTMLParser().unescape
+else:
+    from html import unescape
 
-This would be an anchor tag in an HTML file, or a file in a directory.
-"""
+
+# These parsing helpers are bits and pieces collected from pip's HTMLPage
+# and Link implementation.
+
+def _parse_base_url(document):
+    bases = [
+        x for x in document.findall(".//base")
+        if x.get("href") is not None
+    ]
+    if bases and bases[0].get("href"):
+        return bases[0].get("href")
+    return None
 
 
 def _parse_name_version(filename, name):
@@ -49,73 +58,59 @@ def _parse_name_version(filename, name):
     return name, packaging.version.parse(vers)
 
 
-class SimplePageParser(six.moves.html_parser.HTMLParser):
-    """Parser to scrap links from a simple API page.
-    """
-    def __init__(self, base_url):
-        # Can't use super() because HTMLParser was an old-style class.
-        six.moves.html_parser.HTMLParser.__init__(self)
-        self.base_url_parts = six.moves.urllib_parse.urlsplit(base_url)
-        self.name = base_url.rstrip("/").rsplit("/", 1)[-1]
-        self.current_a_data = None
-        self.entries = []
+CLEAN_URL_RE = re.compile(r'[^a-z0-9$&+,/:;=?@.#%_\\|-]', re.IGNORECASE)
 
-    def handle_starttag(self, tag, attrs):
-        if tag.lower() != "a":
-            return
-        url_parts = None
-        hashes = {}
-        requires_python = None
-        gpg_sig = None
-        for attr, value in attrs:
-            if attr == "href":
-                url_parts = six.moves.urllib_parse.urlsplit(value)
-                if url_parts.fragment:
-                    htype, hvalue = url_parts.fragment.split("=", 1)
-                    url_parts = url_parts._replace(fragment="")
-                    hashes[htype] = hvalue
-                replacements = {
-                    fn: part
-                    for fn, part in zip(url_parts._fields, url_parts)
-                    if part and fn != "fragment"
-                }
-                replacements["fragment"] = ""
-                url_parts = self.base_url_parts._replace(**replacements)
-            elif attr == "data-requires-python":
-                requires_python = packaging.specifiers.SpecifierSet(value)
-            elif attr == "data-gpg-sig":
-                gpg_sig = value
-        if not url_parts:   # No href attribute? Skip.
-            return
-        url = six.moves.urllib_parse.urlunsplit(url_parts)
-        if requires_python is None:
-            requires_python = packaging.specifiers.SpecifierSet()
-        self.current_a_data = (url, hashes, requires_python, gpg_sig)
+HASH_RE = re.compile(r'(sha1|sha224|sha384|sha256|sha512|md5)=([a-f0-9]+)')
 
-    def handle_endtag(self, tag):
-        if tag.lower() != "a":
-            return
-        self.current_a_data = None
 
-    def handle_data(self, data):
-        if self.current_a_data is None:
-            return
+def _iter_entries(document, base_url, package_name):
+    for anchor in document.findall(".//a"):
+        href = anchor.get("href")
+        if not href:
+            continue
         try:
-            _, version = _parse_name_version(data, self.name)
+            _, version = _parse_name_version(anchor.text, package_name)
         except ValueError:
-            return
-        self.entries.append(Entry(self.name, version, *self.current_a_data))
+            continue
+        url = CLEAN_URL_RE.sub(
+            lambda match: "%{:2x}".format(ord(match.group(0))),
+            six.moves.urllib_parse.urljoin(base_url, href),
+        )
+        url, fragment = six.moves.urllib_parse.urldefrag(url)
+        hashes = dict(m.group(1, 2) for m in HASH_RE.finditer(fragment))
+        requires_python = packaging.specifiers.SpecifierSet(
+            unescape(anchor.get("data-requires-python", "")),
+        )
+        gpg_sig = unescape(anchor.get("data-gpg-sig", ""))
+        yield Entry(
+            package_name, version, url,
+            hashes, requires_python, gpg_sig,
+        )
 
 
-def parse_from_html(url, html):
+Entry = collections.namedtuple("Entry", [
+    "name",             # Name of the project. Not necessarily canonical?
+    "version",          # packaging.version._BaseVersion.
+    "location",         # URL or path to get the file.
+    "hashes",           # Mapping of hashes, {hashname: hexdigest}.
+    "requires_python",  # packaging.specifiers.SpecifierSet.
+    "gpg_sig",          # str or None.
+])
+"""A downloadable thing in a repository.
+
+This would be an anchor tag in an HTML file, or a file in a directory.
+"""
+
+
+def parse_from_html(html, base_url, package_name=None):
     """Parse entries from HTML source.
 
-    `url` should be the simple API URL, or None if not applicable. `html`
-    should be text of valid HTML 5 content.
+    `html` should be text of valid HTML 5 content. `package_name` should be
+    the name of the package on this page, or `None` if not applicable.
     """
-    parser = SimplePageParser(url)
-    parser.feed(html)
-    return parser.entries
+    document = html5lib.parse(html, namespaceHTMLElements=False)
+    base_url = _parse_base_url(document) or base_url
+    return list(_iter_entries(document, base_url, package_name))
 
 
 def _entry_from_path(path):
@@ -127,15 +122,15 @@ def _entry_from_path(path):
     return Entry(name, version, path, {}, None, None)
 
 
-def list_from_paths(directory, paths):
-    """Parse entries from HTML source.
+def list_from_paths(paths, root_directory):
+    """Parse entries from a file listing.
 
     `paths` should be a sequence of paths, e.g. from `os.listdir()`. Paths can
-    be either absolute or relative to `directory`.
+    be either absolute or relative to `root_directory`.
     """
     return [
         entry for entry in (
-            _entry_from_path(os.path.join(directory, path))
+            _entry_from_path(os.path.join(root_directory, path))
             for path in paths
         )
         if entry is not None
