@@ -41,23 +41,17 @@ def split_entry_ext(path):
 EGG_INFO_RE = re.compile(r"([a-z0-9_.]+)-([a-z0-9_.!+-]+)", re.IGNORECASE)
 
 
-def match_egg_info_version(egg_info, search_name, _egg_info_re=EGG_INFO_RE):
+def match_egg_info_version(egg_info, search_name):
     """Pull the version part out of a string.
 
-    Taken from `pip._internal.index.egg_info_matches`.
+    Taken (simplified) from `pip._internal.index.egg_info_matches`.
 
     :param egg_info: The string to parse. E.g. foo-2.1
-    :param search_name: The name of the package this belongs to. None to
-        infer the name. Note that this cannot unambiguously parse strings
-        like foo-2-2 which might be foo, 2-2 or foo-2, 2.
-    :param link: The link the string came from, for logging on failure.
+    :param search_name: The name of the package this belongs to.
     """
-    match = _egg_info_re.search(egg_info)
+    match = EGG_INFO_RE.search(egg_info)
     if not match:
         return None
-    if search_name is None:
-        full_match = match.group(0)
-        return full_match[full_match.index('-'):]
     name = match.group(0).lower()
     # To match the "safe" name that pkg_resources creates:
     name = name.replace('_', '-')

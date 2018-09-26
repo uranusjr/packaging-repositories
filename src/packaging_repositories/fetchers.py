@@ -30,6 +30,7 @@ class Fetcher(six.Iterator):
             yield endpoint
 
     def iter_entries(self, endpoint, source):
-        for entry in self._repository.get_entries(endpoint, source):
-            if package_names_match(entry.name, self._package_name):
+        name = self._package_name
+        for entry in self._repository.get_entries(name, endpoint, source):
+            if package_names_match(entry.name, name):
                 yield entry

@@ -38,27 +38,22 @@ def _parse_base_url(document):
     return None
 
 
-def _parse_name_version(filename, name):
+def _parse_version(filename, package_name):
     stem, ext = split_entry_ext(filename)
     if ext == WHEEL_EXTENSION:
         match = WHEEL_FILENAME_RE.match(filename)
         if not match:
             raise ValueError("invald wheel name {0!r}".format(filename))
         wheel_name, vers = match.group("name", "ver")
-        if name is None:
-            name = wheel_name
-        elif not package_names_match(name, wheel_name):
+        if not package_names_match(package_name, wheel_name):
             raise ValueError("invald wheel {0!r} for package {1!r}".format(
-                filename, name,
+                filename, package_name,
             ))
     else:
-        vers = match_egg_info_version(stem, name)
+        vers = match_egg_info_version(stem, package_name)
         if vers is None:
             raise ValueError("invalid filename {0!r}".format(filename))
-        if name is None:
-            name = stem[:-len(vers)]
-            vers = vers[1:]     # Strip leading "-".
-    return name, packaging.version.parse(vers)
+    return packaging.version.parse(vers)
 
 
 CLEAN_URL_RE = re.compile(r'[^a-z0-9$&+,/:;=?@.#%_\\|-]', re.IGNORECASE)
@@ -72,9 +67,7 @@ def _iter_entries(document, base_url, package_name):
         if not href:
             continue
         try:
-            package_name, version = _parse_name_version(
-                anchor.text, package_name,
-            )
+            version = _parse_version(anchor.text, package_name)
         except ValueError:
             continue
         url = CLEAN_URL_RE.sub(
@@ -111,35 +104,35 @@ This would be an anchor tag in an HTML file, or a file in a directory.
 """
 
 
-def parse_from_html(html, base_url, package_name=None):
+def parse_from_html(html, base_url, package_name):
     """Parse entries from HTML source.
 
     `html` should be text of valid HTML 5 content. `package_name` should be
-    the name of the package on this page, or `None` if not applicable.
+    the name of the package on this page.
     """
     document = html5lib.parse(html, namespaceHTMLElements=False)
     base_url = _parse_base_url(document) or base_url
     return list(_iter_entries(document, base_url, package_name))
 
 
-def _entry_from_path(path):
+def _entry_from_path(path, package_name):
     filename = os.path.basename(path)
     try:
-        name, version = _parse_name_version(filename, None)
+        version = _parse_version(filename, package_name)
     except ValueError:
         return None
-    return Entry(name, version, Endpoint(True, path), {}, None, None)
+    return Entry(package_name, version, Endpoint(True, path), {}, None, None)
 
 
-def list_from_paths(paths, root_directory):
+def list_from_paths(paths, root, package_name):
     """Parse entries from a file listing.
 
     `paths` should be a sequence of paths, e.g. from `os.listdir()`. Paths can
-    be either absolute or relative to `root_directory`.
+    be either absolute or relative to `root`.
     """
     return [
         entry for entry in (
-            _entry_from_path(os.path.join(root_directory, path))
+            _entry_from_path(os.path.join(root, path), package_name)
             for path in paths
         )
         if entry is not None

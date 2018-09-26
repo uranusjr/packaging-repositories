@@ -72,7 +72,7 @@ def test_flat_match(flat_repo):
     root = os.path.join(os.path.dirname(__file__), "data")
     assert entries == [
         Entry(
-            name="Jinja2", version=Version("2.10"),
+            name="jinja2", version=Version("2.10"),
             endpoint=Endpoint(
                 local=True,
                 value=os.path.join(root, "Jinja2-2.10-py2.py3-none-any.whl"),
