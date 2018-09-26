@@ -1,14 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import collections
 import posixpath
 import re
 
 from packaging.utils import canonicalize_name
+from six.moves import urllib_parse, urllib_request
 
 
 def package_names_match(a, b):
     return canonicalize_name(a) == canonicalize_name(b)
+
+
+Endpoint = collections.namedtuple("Endpoint", "local value")
+
+
+def endpoint_from_url(parsed_result):
+    if parsed_result.scheme == "file":
+        return Endpoint(True, urllib_request.url2pathname(parsed_result.path))
+    defragged = parsed_result._replace(fragment="")
+    return Endpoint(False, urllib_parse.urlunparse(defragged))
 
 
 def split_entry_ext(path):

@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import collections
 import posixpath
 
 from packaging.utils import canonicalize_name
 from six.moves import urllib_parse, urllib_request
 
 from .entries import list_from_paths, parse_from_html
+from .utils import Endpoint, endpoint_from_url
 
 
 def _is_filesystem_path(parsed_result):
@@ -20,9 +20,6 @@ def _is_filesystem_path(parsed_result):
     if not parsed_result.netloc:
         return True
     return False
-
-
-Endpoint = collections.namedtuple("Endpoint", "local value")
 
 
 class _Repository(object):
@@ -41,10 +38,7 @@ class _Repository(object):
         parsed_result = urllib_parse.urlparse(endpoint)
         if _is_filesystem_path(parsed_result):
             return Endpoint(True, endpoint)
-        if parsed_result.scheme == "file":
-            return Endpoint(True, urllib_request.url2pathname(endpoint).path)
-        defragged_result = parsed_result._replace(fragment="")
-        return Endpoint(False, urllib_parse.urlunparse(defragged_result))
+        return endpoint_from_url(parsed_result)
 
 
 class SimpleRepository(_Repository):
@@ -71,7 +65,8 @@ class FlatHTMLRepository(_Repository):
         yield self.base_endpoint
 
     def get_entries(self, endpoint, html):
-        return parse_from_html(html, endpoint.value)
+        url = "file://{0}".format(urllib_request.pathname2url(endpoint.value))
+        return parse_from_html(html, url)
 
 
 class LocalDirectoryRepository(_Repository):

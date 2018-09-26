@@ -14,6 +14,7 @@ import six
 from .utils import (
     WHEEL_EXTENSION, WHEEL_FILENAME_RE,
     match_egg_info_version, package_names_match, split_entry_ext,
+    Endpoint, endpoint_from_url,
 )
 
 
@@ -76,14 +77,18 @@ def _iter_entries(document, base_url, package_name):
             lambda match: "%{:2x}".format(ord(match.group(0))),
             six.moves.urllib_parse.urljoin(base_url, href),
         )
-        url, fragment = six.moves.urllib_parse.urldefrag(url)
-        hashes = dict(m.group(1, 2) for m in HASH_RE.finditer(fragment))
+        parsed_result = six.moves.urllib_parse.urlparse(url)
+        hashes = dict(
+            match.group(1, 2)
+            for match in HASH_RE.finditer(parsed_result.fragment)
+        )
+        endpoint = endpoint_from_url(parsed_result)
         requires_python = packaging.specifiers.SpecifierSet(
             unescape(anchor.get("data-requires-python", "")),
         )
         gpg_sig = unescape(anchor.get("data-gpg-sig", ""))
         yield Entry(
-            package_name, version, url,
+            package_name, version, endpoint,
             hashes, requires_python, gpg_sig,
         )
 
@@ -91,7 +96,7 @@ def _iter_entries(document, base_url, package_name):
 Entry = collections.namedtuple("Entry", [
     "name",             # Name of the project. Not necessarily canonical?
     "version",          # packaging.version._BaseVersion.
-    "location",         # URL or path to get the file.
+    "endpoint",         # Endpoint to get the file.
     "hashes",           # Mapping of hashes, {hashname: hexdigest}.
     "requires_python",  # packaging.specifiers.SpecifierSet.
     "gpg_sig",          # str or None.
@@ -119,7 +124,7 @@ def _entry_from_path(path):
         name, version = _parse_name_version(filename, None)
     except ValueError:
         return None
-    return Entry(name, version, path, {}, None, None)
+    return Entry(name, version, Endpoint(True, path), {}, None, None)
 
 
 def list_from_paths(paths, root_directory):
