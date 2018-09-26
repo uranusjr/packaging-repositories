@@ -11,14 +11,14 @@ from .entries import list_from_paths, parse_from_html
 from .utils import Endpoint, endpoint_from_url, url_from_endpoint
 
 
-def _is_filesystem_path(parsed_result):
-    if not parsed_result.scheme:
+def _is_filesystem_path(split_result):
+    if not split_result.scheme:
         return True
-    if len(parsed_result.scheme) > 1:
+    if len(split_result.scheme) > 1:
         return False
     # urlparse misidentifies Windows absolute paths. In this situation, the
     # scheme would be a single letter (drive name), and netloc would be empty.
-    if not parsed_result.netloc:
+    if not split_result.netloc:
         return True
     return False
 
@@ -36,10 +36,10 @@ class _Repository(object):
     @property
     def base_endpoint(self):
         endpoint = self._base_endpoint
-        parsed_result = urllib_parse.urlparse(endpoint)
-        if _is_filesystem_path(parsed_result):
-            return Endpoint(True, os.path.abspath(endpoint))
-        return endpoint_from_url(parsed_result)
+        split_result = urllib_parse.urlsplit(endpoint)
+        if _is_filesystem_path(split_result):
+            return Endpoint(True, os.path.normpath(os.path.abspath(endpoint)))
+        return endpoint_from_url(split_result)
 
 
 class SimpleRepository(_Repository):

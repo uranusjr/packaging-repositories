@@ -74,12 +74,12 @@ def _iter_entries(document, base_url, package_name):
             lambda match: "%{:2x}".format(ord(match.group(0))),
             six.moves.urllib_parse.urljoin(base_url, href),
         )
-        parsed_result = six.moves.urllib_parse.urlparse(url)
+        split_result = six.moves.urllib_parse.urlsplit(url)
         hashes = dict(
             match.group(1, 2)
-            for match in HASH_RE.finditer(parsed_result.fragment)
+            for match in HASH_RE.finditer(split_result.fragment)
         )
-        endpoint = endpoint_from_url(parsed_result)
+        endpoint = endpoint_from_url(split_result)
         requires_python = packaging.specifiers.SpecifierSet(
             unescape(anchor.get("data-requires-python", "")),
         )
