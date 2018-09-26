@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import os
 import posixpath
 import re
 
@@ -24,6 +25,13 @@ def endpoint_from_url(parsed_result):
         return Endpoint(True, urllib_request.url2pathname(parsed_result.path))
     defragged = parsed_result._replace(fragment="")
     return Endpoint(False, urllib_parse.urlunparse(defragged))
+
+
+def url_from_endpoint(endpoint):
+    if not endpoint.local:
+        return endpoint.value
+    path = os.path.normpath(os.path.abspath(endpoint.value))
+    return urllib_parse.urljoin("file:", urllib_request.pathname2url(path))
 
 
 def split_entry_ext(path):
