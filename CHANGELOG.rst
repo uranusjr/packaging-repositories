@@ -1,3 +1,14 @@
+0.2.0 (2018-09-26)
+==================
+
+The Fetcher initializer now accepts a package name (as string) instead of a
+requirement object. Specifier filtering is now provided by the filter feature.
+
+A new set of classes are added to support declarative filtering of fetched
+file entries. A base class Filter is introduced for subclassing, and two
+built-in filters are provided for filtering by version and requires-python.
+
+
 0.1.0 (2018-09-25)
 ==================
 
