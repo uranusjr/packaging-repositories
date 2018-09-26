@@ -23,7 +23,7 @@ def split_entry_ext(path):
     return base, ext
 
 
-EGG_INFO_RE = re.compile(r'([a-z0-9_.]+)-([a-z0-9_.!+-]+)', re.I)
+EGG_INFO_RE = re.compile(r"([a-z0-9_.]+)-([a-z0-9_.!+-]+)", re.IGNORECASE)
 
 
 def match_egg_info_version(egg_info, search_name, _egg_info_re=EGG_INFO_RE):
@@ -58,7 +58,7 @@ WHEEL_FILENAME_RE = re.compile(
     r"""^(?P<namever>(?P<name>.+?)-(?P<ver>.*?))
     ((-(?P<build>\d[^-]*?))?-(?P<pyver>.+?)-(?P<abi>.+?)-(?P<plat>.+?)
     \.whl|\.dist-info)$""",
-    re.VERBOSE
+    re.VERBOSE,
 )
 
 
