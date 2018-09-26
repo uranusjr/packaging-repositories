@@ -31,7 +31,9 @@ class _Repository(object):
         self._base_endpoint = endpoint
 
     def __repr__(self):
-        return "{0}({1!r})".format(type(self).__name__, self.endpoint.value)
+        return "{name}({endpoint!r})".format(
+            name=type(self).__name__, endpoint=self.base_endpoint.value,
+        )
 
     @property
     def base_endpoint(self):
@@ -48,8 +50,8 @@ class _Repository(object):
 class SimpleRepository(_Repository):
     """A repository compliant to PEP 503 "Simple Repository API".
     """
-    def iter_endpoints(self, requirement):
-        name = canonicalize_name(requirement.name)
+    def iter_endpoints(self, package_name):
+        name = canonicalize_name(package_name)
         base_endpoint = self.base_endpoint
         value = posixpath.join(base_endpoint.value, name, "")
         yield base_endpoint._replace(value=value)
@@ -63,7 +65,7 @@ class FlatHTMLRepository(_Repository):
 
     This is the non-directory variant of pip's --find-links.
     """
-    def iter_endpoints(self, requirement):
+    def iter_endpoints(self, package_name):
         yield self.base_endpoint
 
     def get_entries(self, endpoint, html):
@@ -80,7 +82,7 @@ class LocalDirectoryRepository(_Repository):
         if not self.base_endpoint.local:
             raise ValueError("endpoint is not local")
 
-    def iter_endpoints(self, requirement):
+    def iter_endpoints(self, package_name):
         yield self.base_endpoint
 
     def get_entries(self, endpoint, paths):

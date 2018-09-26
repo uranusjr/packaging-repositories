@@ -16,10 +16,10 @@ from .utils import (
 
 Entry = collections.namedtuple("Entry", [
     "name",             # Name of the project. Not necessarily canonical?
-    "version",          # packaging.version.
+    "version",          # packaging.version._BaseVersion.
     "location",         # URL or path to get the file.
     "hashes",           # Mapping of hashes, {hashname: hexdigest}.
-    "requires_python",  # packaging.specifiers.SpecifierSet or None.
+    "requires_python",  # packaging.specifiers.SpecifierSet.
     "gpg_sig",          # str or None.
 ])
 """A downloadable thing in a repository.
@@ -85,9 +85,12 @@ class SimplePageParser(six.moves.html_parser.HTMLParser):
                 requires_python = packaging.specifiers.SpecifierSet(value)
             elif attr == "data-gpg-sig":
                 gpg_sig = value
-        if url_parts:
-            url = six.moves.urllib_parse.urlunsplit(url_parts)
-            self.current_a_data = (url, hashes, requires_python, gpg_sig)
+        if not url_parts:   # No href attribute? Skip.
+            return
+        url = six.moves.urllib_parse.urlunsplit(url_parts)
+        if requires_python is None:
+            requires_python = packaging.specifiers.SpecifierSet()
+        self.current_a_data = (url, hashes, requires_python, gpg_sig)
 
     def handle_endtag(self, tag):
         if tag.lower() != "a":

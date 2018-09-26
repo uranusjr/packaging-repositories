@@ -6,8 +6,7 @@ import os
 
 import aiohttp
 
-from packaging.requirements import Requirement
-from packaging_repositories import Fetcher, SimpleRepository
+from packaging_repositories import Fetcher, SimpleRepository, VersionFilter
 
 
 def as_future(value):
@@ -65,9 +64,12 @@ class AIOHTTPFetcher(Fetcher):
         return self._iterator.__anext__()
 
 
-async def fetch(repository, requirement):
+async def fetch(repository, requirement, filters):
     fetcher = AIOHTTPFetcher(repository, requirement)
-    return [entry async for entry in fetcher]
+    generator = fetcher
+    for f in filters:
+        generator = f(generator)
+    return [entry async for entry in generator]
 
 
 def run(coro):
@@ -80,5 +82,6 @@ def run(coro):
 
 def test_basic():
     pypi = SimpleRepository("https://pypi.org/simple")
-    entries = run(fetch(pypi, Requirement("pip>=9,<10")))
+    version_filter = VersionFilter(">=9,<10")
+    entries = run(fetch(pypi, "pip", [version_filter]))
     assert len(entries) >= 8, entries

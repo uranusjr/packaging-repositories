@@ -6,34 +6,18 @@ import six
 from .utils import package_names_match
 
 
-def _is_match(entry, requirement, environment):
-    if not package_names_match(entry.name, requirement.name):
-        return False
-    specifier = requirement.specifier
-    if specifier and not specifier.contains(entry.version):
-        return False
-    marker = requirement.marker
-    if marker and not marker.evaluate(environment):
-        return False
-    return True
-
-
-class Fetcher(object):
+class Fetcher(six.Iterator):
     """Base fetch implementation to apply requirement filtering.
     """
-    def __init__(self, repository, requirement, environment=None):
+    def __init__(self, repository, package_name):
         self._repository = repository
-        self._requirement = requirement
-        self._environment = environment
+        self._package_name = package_name
 
     def __repr__(self):
-        parts = [
-            repr(self._repository.endpoint.value),
-            repr(str(self._requirement)),
-        ]
-        if self._environment:
-            parts.append(repr(self._environment))
-        return "Fetcher({0})".format(", ".join(parts))
+        return "Fetcher({endpoint!r}, {package_name!r})".format(
+            endpoint=self._repository.base_endpoint.value,
+            package_name=self._package_name,
+        )
 
     def __iter__(self):
         return self
@@ -41,15 +25,11 @@ class Fetcher(object):
     def __aiter__(self):
         return self
 
-    if six.PY2:
-        def next(self):
-            return self.__next__()
-
     def iter_endpoints(self):
-        for endpoint in self._repository.iter_endpoints(self._requirement):
+        for endpoint in self._repository.iter_endpoints(self._package_name):
             yield endpoint
 
     def iter_entries(self, endpoint, source):
         for entry in self._repository.get_entries(endpoint, source):
-            if _is_match(entry, self._requirement, self._environment):
+            if package_names_match(entry.name, self._package_name):
                 yield entry

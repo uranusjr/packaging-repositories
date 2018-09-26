@@ -6,8 +6,7 @@ import os
 
 import requests
 
-from packaging.requirements import Requirement
-from packaging_repositories import Fetcher, SimpleRepository
+from packaging_repositories import Fetcher, SimpleRepository, VersionFilter
 
 
 def iter_all_entries(fetcher):
@@ -41,6 +40,7 @@ class RequestsFetcher(Fetcher):
 
 def test_basic():
     pypi = SimpleRepository("https://pypi.org/simple")
-    fetcher = RequestsFetcher(pypi, Requirement("pip>=9,<10"))
-    entries = list(fetcher)
+    fetcher = RequestsFetcher(pypi, "pip")
+    version_filter = VersionFilter(">=9,<10")
+    entries = list(version_filter(fetcher))
     assert len(entries) >= 8, entries

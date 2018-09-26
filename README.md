@@ -6,9 +6,9 @@ Discussion: https://github.com/pypa/pip/issues/5800
 Proposed API:
 
 ```python
-from packaging.requirement import Requirement
 from packaging_repositories import (
-    Fetcher, SimpleRepository, FlatHTMLRepository, LocalDirectoryRepository,
+    Fetcher, VersionFilter,
+    SimpleRepository, FlatHTMLRepository, LocalDirectoryRepository,
 )
 
 
@@ -34,17 +34,17 @@ repos = [
     LocalDirectoryRepository('/path/to/local/directory'),
 ]
 
-requirement = Requirement('pip>=10,<18')
+version_filter = VersionFilter('>=10,<18')
 
 for repo in repos:
-    fetcher = RequestsFetcher(repo, requirement)
-    for entry in fetcher:
+    fetcher = RequestsFetcher(repo, 'pip')
+    for entry in version_filter(fetcher):
         print(entry)
 
-    # Maybe it is a good idea to separate base classes for fetchers? 
+    # Maybe it is a good idea to separate base classes for fetchers?
     # SynchronousFetcher implements ``__next__``, and AsynchronousFetcher
     # implements ``__anext__``.
-    fetcher = AIOHTTPFetcher(repo, requirement)
-    async for entry in fetcher:
+    fetcher = AIOHTTPFetcher(repo, 'pip')
+    async for entry in version_filter(fetcher):
         print(entry)
 ```
