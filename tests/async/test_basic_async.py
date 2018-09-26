@@ -18,7 +18,7 @@ def as_future(value):
 async def read_remote_text(session, url):
     response = await session.get(url)
     response.raise_for_status()
-    return (await response.text())
+    return (await response.read(), response.get_encoding())
 
 
 async def iter_futures(session, fetcher):
@@ -29,8 +29,8 @@ async def iter_futures(session, fetcher):
                 names = [os.path.join(path, n) for n in os.listdir(path)]
                 yield endpoint, as_future(names)
             else:
-                with open(path, encoding="utf-8") as f:
-                    yield endpoint, as_future(f.read())
+                with open(path, "rb") as f:
+                    yield endpoint, as_future((f.read(), None))
         else:
             coro = read_remote_text(session, endpoint.value)
             yield endpoint, asyncio.ensure_future(coro)

@@ -1,8 +1,9 @@
 __all__ = [
     "__version__",
-    "Endpoint", "Entry", "Fetcher",
+    "Entry", "Fetcher",
     "Filter", "RequiresPythonFilter", "VersionFilter",
     "FlatHTMLRepository", "LocalDirectoryRepository", "SimpleRepository",
+    "Endpoint", "guess_encoding",
 ]
 
 from .entries import Entry
@@ -11,6 +12,6 @@ from .filters import Filter, RequiresPythonFilter, VersionFilter
 from .repositories import (
     FlatHTMLRepository, LocalDirectoryRepository, SimpleRepository,
 )
-from .utils import Endpoint
+from .utils import Endpoint, guess_encoding
 
 __version__ = "0.3.0d1"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import cgi
 import collections
 import os
 import posixpath
@@ -84,3 +85,18 @@ WHEEL_FILENAME_RE = re.compile(
 
 # Taken from `pip._internal.Wheel.wheel_ext`.
 WHEEL_EXTENSION = ".whl"
+
+
+def guess_encoding(headers):
+    """Guess transport encoding from response headers.
+
+    Taken from `pip._internal.index.HTMLPage`.
+
+    We don't use this, but this is extremely useful when implementing fetchers,
+    why not supply it to avoid duplication.
+    """
+    if headers and "Content-Type" in headers:
+        content_type, params = cgi.parse_header(headers["Content-Type"])
+        if "charset" in params:
+            return params["charset"]
+    return None

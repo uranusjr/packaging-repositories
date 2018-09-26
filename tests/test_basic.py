@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import io
 import os
 
 import pytest
@@ -11,7 +10,8 @@ import requests
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 from packaging_repositories import (
-    Endpoint, Entry, Fetcher,
+    Endpoint, guess_encoding,
+    Entry, Fetcher,
     FlatHTMLRepository, SimpleRepository, VersionFilter,
 )
 
@@ -24,12 +24,12 @@ def iter_all_entries(fetcher):
             if os.path.isdir(path):
                 src = [os.path.join(path, name) for name in os.listdir(path)]
             else:
-                with io.open(path, encoding="utf-8") as f:
-                    src = f.read()
+                with open(path, "rb") as f:
+                    src = (f.read(), None)
         else:
             response = session.get(endpoint.value)
             response.raise_for_status()
-            src = response.text
+            src = (response.content, guess_encoding(response.headers))
         for entry in fetcher.iter_entries(endpoint, src):
             yield entry
 

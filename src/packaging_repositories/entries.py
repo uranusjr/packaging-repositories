@@ -107,10 +107,17 @@ This would be an anchor tag in an HTML file, or a file in a directory.
 def parse_from_html(html, base_url, package_name):
     """Parse entries from HTML source.
 
-    `html` should be text of valid HTML 5 content. `package_name` should be
-    the name of the package on this page.
+    `html` should be valid HTML 5 content. This could be either text, or a
+    2-tuple of (content, encoding). In the latter case, content would be
+    binary, and the encoding is passed into html5lib as transport encoding to
+    guess the document's encoding.
+
+    `package_name` should be the name of the package on this page.
     """
-    document = html5lib.parse(html, namespaceHTMLElements=False)
+    kwargs = {"namespaceHTMLElements": False}
+    if not isinstance(html, six.string_types):
+        html, kwargs["transport_encoding"] = html
+    document = html5lib.parse(html, **kwargs)
     base_url = _parse_base_url(document) or base_url
     return list(_iter_entries(document, base_url, package_name))
 
