@@ -28,14 +28,17 @@ else:
 # These parsing helpers are bits and pieces collected from pip's HTMLPage
 # and Link implementation.
 
-def _parse_base_url(document):
+def _parse_base_url(document, transport_url):
     bases = [
         x for x in document.findall(".//base")
         if x.get("href") is not None
     ]
-    if bases and bases[0].get("href"):
-        return bases[0].get("href")
-    return None
+    if not bases:
+        return transport_url
+    parsed_url = bases[0].get("href")
+    if parsed_url:
+        return parsed_url
+    return transport_url
 
 
 def _parse_version(filename, package_name):
@@ -104,13 +107,14 @@ This would be an anchor tag in an HTML file, or a file in a directory.
 """
 
 
-def parse_from_html(html, base_url, package_name):
+def parse_from_html(html, page_url, package_name):
     """Parse entries from HTML source.
 
     `html` should be valid HTML 5 content. This could be either text, or a
     2-tuple of (content, encoding). In the latter case, content would be
     binary, and the encoding is passed into html5lib as transport encoding to
-    guess the document's encoding.
+    guess the document's encoding. The transport encoding can be `None` if
+    the callee does not have this information.
 
     `package_name` should be the name of the package on this page.
     """
@@ -118,7 +122,7 @@ def parse_from_html(html, base_url, package_name):
     if not isinstance(html, six.string_types):
         html, kwargs["transport_encoding"] = html
     document = html5lib.parse(html, **kwargs)
-    base_url = _parse_base_url(document) or base_url
+    base_url = _parse_base_url(document, page_url)
     return list(_iter_entries(document, base_url, package_name))
 
 
