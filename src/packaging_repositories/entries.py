@@ -11,10 +11,10 @@ import packaging.specifiers
 import packaging.version
 import six
 
+from .endpoints import Endpoint
 from .utils import (
     WHEEL_EXTENSION, WHEEL_FILENAME_RE,
     match_egg_info_version, package_names_match, split_entry_ext,
-    Endpoint, endpoint_from_url,
 )
 
 
@@ -82,7 +82,7 @@ def _iter_entries(document, base_url, package_name):
             match.group(1, 2)
             for match in HASH_RE.finditer(split_result.fragment)
         )
-        endpoint = endpoint_from_url(split_result)
+        endpoint = Endpoint.from_url(split_result)
         requires_python = packaging.specifiers.SpecifierSet(
             unescape(anchor.get("data-requires-python", "")),
         )

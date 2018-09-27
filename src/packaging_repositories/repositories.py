@@ -7,8 +7,8 @@ import posixpath
 from packaging.utils import canonicalize_name
 from six.moves import urllib_parse
 
+from .endpoints import Endpoint
 from .entries import list_from_paths, parse_from_html
-from .utils import Endpoint, endpoint_from_url, url_from_endpoint
 
 
 def _is_filesystem_path(split_result):
@@ -39,7 +39,7 @@ class _Repository(object):
         split_result = urllib_parse.urlsplit(endpoint)
         if _is_filesystem_path(split_result):
             return Endpoint(True, os.path.normpath(os.path.abspath(endpoint)))
-        return endpoint_from_url(split_result)
+        return Endpoint.from_url(split_result)
 
 
 class SimpleRepository(_Repository):
@@ -52,7 +52,7 @@ class SimpleRepository(_Repository):
         yield base_endpoint._replace(value=value)
 
     def get_entries(self, package_name, endpoint, html):
-        return parse_from_html(html, url_from_endpoint(endpoint), package_name)
+        return parse_from_html(html, endpoint.as_url(), package_name)
 
 
 class FlatHTMLRepository(_Repository):
@@ -64,7 +64,7 @@ class FlatHTMLRepository(_Repository):
         yield self.base_endpoint
 
     def get_entries(self, package_name, endpoint, html):
-        return parse_from_html(html, url_from_endpoint(endpoint), package_name)
+        return parse_from_html(html, endpoint.as_url(), package_name)
 
 
 class LocalDirectoryRepository(_Repository):

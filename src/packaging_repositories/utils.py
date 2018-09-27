@@ -2,40 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import cgi
-import collections
-import os
 import posixpath
 import re
 
 from packaging.utils import canonicalize_name
 from six import string_types
-from six.moves import urllib_parse, urllib_request
 
 
 def package_names_match(a, b):
     if not isinstance(a, string_types) or not isinstance(b, string_types):
         return False
     return canonicalize_name(a) == canonicalize_name(b)
-
-
-Endpoint = collections.namedtuple("Endpoint", "local value")
-
-
-def endpoint_from_url(split_result):
-    if split_result.scheme == "file":
-        path = urllib_request.url2pathname(split_result.path)
-        if split_result.netloc:     # UNC path.
-            path = "\\\\{netloc}{path}".format(split_result.netloc, path)
-        return Endpoint(True, path)
-    defragged = split_result._replace(fragment="")
-    return Endpoint(False, urllib_parse.urlunsplit(defragged))
-
-
-def url_from_endpoint(endpoint):
-    if not endpoint.local:
-        return endpoint.value
-    path = os.path.normpath(os.path.abspath(endpoint.value))
-    return urllib_parse.urljoin("file:", urllib_request.pathname2url(path))
 
 
 def split_entry_ext(path):
